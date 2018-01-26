@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html ng-app="testApp">
+<head>
+	<script src="angular.min.js"></script>
+	<script type="text/javascript">
+		var testApp = angular.module('testApp', []);
+		testApp.controller('testController',
+			function testing($scope, $http) {
+				var dataReady;
+				var editVal;
+				var cookieVal;
+				var userUrl = 'https://api.mesosfer.com/api/v2/users';
+				var bucketUrl = 'https://api.mesosfer.com/api/v2/data/bucket/TestData';
+
+				$http({
+					method: 'GET',
+					url: userUrl,
+					headers: {
+						"Content-Type": "application/json",
+						"X-Mesosfer-AppId": "tzVOewKnss",
+						"X-Mesosfer-AppKey": "ACNRwDdYOzGekYkDPbd1ffNpEPH0nr8J"
+					}
+				}).
+				then(function(response) {
+					$scope.users = response.data.results;
+				});
+
+				$scope.logIn = function() {
+					var loginData = {email : $scope.userMail, password: $scope.userPass};
+
+					$http({
+						method: 'POST',
+						url: userUrl + '/signin',
+						data: loginData,
+						headers: {
+							"Content-Type": "application/json",
+							"X-Mesosfer-AppId": "tzVOewKnss",
+							"X-Mesosfer-AppKey": "ACNRwDdYOzGekYkDPbd1ffNpEPH0nr8J"
+						}
+					}).
+					then(function(response) {
+						cookieVal = response.data.accessToken;
+
+						$http({
+							method: 'GET',
+							url: bucketUrl,
+							headers: {
+								"Authorization": "Bearer " + cookieVal,
+								"X-Mesosfer-AppId": "tzVOewKnss",
+								"X-Mesosfer-AppKey": "ACNRwDdYOzGekYkDPbd1ffNpEPH0nr8J"
+							}
+						}).
+						then(function(response) {
+							$scope.things = response.data.results;
+							if ($scope.things.length > 0)
+								dataReady = true;
+						});
+					});
+				}
+
+				$scope.checkCookie = function() {
+					if (cookieVal)
+						return true;
+					else
+						return false;
+				}
+
+				$scope.checkData = function() {
+					if (dataReady)
+						return true;
+					else
+						return false;
+				}
+
+				$scope.addTest = function() {
+					var testData = {metadata: {color : $scope.addTestColor, thing: $scope.addTestThing}};
+					dataReady = false;
+
+					$http({
+						method: 'POST',
+						url: bucketUrl,
+						data: testData,
+						headers: {
+							"Authorization": "Bearer " + cookieVal,
+							"Content-Type": "application/json",
+							"X-Mesosfer-AppId": "tzVOewKnss",
+							"X-Mesosfer-AppKey": "ACNRwDdYOzGekYkDPbd1ffNpEPH0nr8J"
+						}
+					}).then(function(response) {
+						$http({
+							method: 'GET',
+							url: bucketUrl,
+							headers: {
+								"Authorization": "Bearer " + cookieVal,
+								"X-Mesosfer-AppId": "tzVOewKnss",
+								"X-Mesosfer-AppKey": "ACNRwDdYOzGekYkDPbd1ffNpEPH0nr8J"
+							}
+						}).
+						then(function(response) {
+							$scope.things = response.data.results;
+							if ($scope.things.length > 0)
+								dataReady = true;
+						});
+					});
+				}
+
+				$scope.checkEdit = function() {
+					if (editVal)
+						return true;
+					else
+						return false;
+				}
+
+				$scope.readyEditTest = function(objectId, objectColor, objectThing) {
+					editVal = objectId;
+					$scope.editTestColor = objectColor;
+					$scope.editTestThing = objectThing;
+				}
+
+				$scope.sendEditTest = function() {
+					var objectId = editVal;
+					var testData = {metadata: {color : $scope.editTestColor, thing: $scope.editTestThing}};
+					dataReady = false;
+					editVal = false;
+
+					$http({
+						method: 'PUT',
+						url: bucketUrl + '/' + objectId,
+						data: testData,
+						headers: {
+							"Authorization": "Bearer " + cookieVal,
+							"Content-Type": "application/json",
+							"X-Mesosfer-AppId": "tzVOewKnss",
+							"X-Mesosfer-AppKey": "ACNRwDdYOzGekYkDPbd1ffNpEPH0nr8J"
+						}
+					}).then(function(response) {
+						$http({
+							method: 'GET',
+							url: bucketUrl,
+							headers: {
+								"Authorization": "Bearer " + cookieVal,
+								"X-Mesosfer-AppId": "tzVOewKnss",
+								"X-Mesosfer-AppKey": "ACNRwDdYOzGekYkDPbd1ffNpEPH0nr8J"
+							}
+						}).
+						then(function(response) {
+							$scope.things = response.data.results;
+							if ($scope.things.length > 0)
+								dataReady = true;
+						});
+					});
+				}
+
+				$scope.deleteTest = function(objectId) {
+					dataReady = false;
+
+					$http({
+						method: 'DELETE',
+						url: bucketUrl + '/' + objectId,
+						headers: {
+							"Authorization": "Bearer " + cookieVal,
+							"Content-Type": "application/json",
+							"X-Mesosfer-AppId": "tzVOewKnss",
+							"X-Mesosfer-AppKey": "ACNRwDdYOzGekYkDPbd1ffNpEPH0nr8J"
+						}
+					}).then(function(response) {
+						$http({
+							method: 'GET',
+							url: bucketUrl,
+							headers: {
+								"Authorization": "Bearer " + cookieVal,
+								"X-Mesosfer-AppId": "tzVOewKnss",
+								"X-Mesosfer-AppKey": "ACNRwDdYOzGekYkDPbd1ffNpEPH0nr8J"
+							}
+						}).
+						then(function(response) {
+							$scope.things = response.data.results;
+							if ($scope.things.length > 0)
+								dataReady = true;
+						});
+					});
+				}
+		});
+	</script>
+</head>
+<body ng-controller="testController">
+	<div ng-hide="checkCookie()">
+		<div style="margin-bottom: 5px;">Pengguna</div>
+		<input type="text" ng-model="userMail" placeholder="Email">
+		<input type="password" ng-model="userPass" placeholder="Kata Sandi">
+		<button type="button" ng-click="logIn()">Masuk</button>
+	</div>
+
+	<div ng-show="checkCookie()">
+		<div>
+			<div style="margin-bottom: 5px;">Tambah Data</div>
+			<input type="text" ng-model="addTestColor" placeholder="Warna">
+			<input type="text" ng-model="addTestThing" placeholder="Benda">
+			<button type="button" ng-click="addTest()">Kirim</button>
+		</div>
+
+		<div ng-show="checkData()" style="margin-top: 15px;">
+			<div>Tabel Data</div>
+			<table style="margin-top: 5px; margin-left: 20px;">
+				<thead>
+					<tr style="margin-bottom: 5px;">
+						<th style="width: 180px;">Data</th>
+						<th style="width: 120px;">Aksi</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr ng-repeat="item in things">
+						<td>{{item.metadata.color}} {{item.metadata.thing}}</td>
+						<td>
+							<button type="button" ng-click="readyEditTest(item.objectId, item.metadata.color, item.metadata.thing)">Ubah</button>
+							<button type="button" ng-click="deleteTest(item.objectId)">Hapus</button>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<div ng-hide="checkData()" style="margin-top: 15px;">
+			<div>Tabel Data</div>
+			<div style="margin-top: 5px; margin-left: 20px;">Proses Ambil Data</div>
+		</div>
+	</div>
+
+	<div ng-show="checkEdit()" style="margin-top: 15px;">
+		<div style="margin-bottom: 5px;">Ubah Data</div>
+		<input type="text" ng-model="editTestColor" placeholder="Warna">
+		<input type="text" ng-model="editTestThing" placeholder="Benda">
+		<button type="button" ng-click="sendEditTest()">Kirim</button>
+	</div>
+
+	<ul style="margin-top: 15px;">
+		<li ng-repeat="user in users">
+			<span>{{user.firstname}} {{user.lastname}}</span>
+		</li>
+	</ul>
+
+</body>
+</html>
